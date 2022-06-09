@@ -3,8 +3,8 @@ Program main
 
     implicit none 
     
-    integer :: allocerr,iter,intIter,predictedDays,i,j,r,i4_choose,vk,dimImin,percent
-    integer, parameter :: n = 3,maxIter = 100000,maxIntIter = 1000,nzMaxImin = 10
+    integer :: allocerr,iter,intIter,predictedDays,i,j,r,i4_choose,vk,dimImin
+    integer, parameter :: n = 3,maxIter = 1000,maxIntIter = 1000,nzMaxImin = 10
     real, parameter :: alpha = 0.5d0,epsilon = 1.0d-7
     real(kind=8), allocatable :: sk(:),xk(:),xtrial(:),dFmin(:),faux(:),gaux(:),indices(:)
     real(kind=8) :: lambda,fxk,fxtrial,aux,optCond,sigma
@@ -51,50 +51,54 @@ Program main
     call readData()
 
     iter = 0
-    percent = 1
     xk(1:n) = 0.0d0
     
-    call mountFmin(fxk,indices,xk,n,faux)
+    ! call mountFmin(fxk,indices,xk,n,faux)
 
-    do
-        iter = iter + 1
-        call mountGrad(dFmin,xk,n,int(indices(1:q)))
-
-        sigma = 1.0d0
-        intIter = 0
-
-        do  
-            intIter = intIter + 1
-            sk(1:n) = (-1.0d0 / sigma) * dFmin(1:n)
-            xtrial(1:n) = xk(1:n) + sk(1:n)
-
-            call mountFmin(fxtrial,indices,xtrial,n,faux)
-
-            if (fxtrial .lt. (fxk - alpha * norm2(sk)**2)) exit
-            if (intIter .ge. maxIntIter) exit  
-
-            sigma = 2.0d0 * sigma
-        enddo
-        
-        ! optCond = norm2(dFmin)
-        optCond = norm2(xk(1:n) - xtrial(1:n))
-        xk(1:n) = xtrial(1:n)
-        fxk = fxtrial   
-
-        print*, optCond
-
-        ! if (iter .eq. percent * (maxIter / 100)) then
-        !     print*, percent,'%'
-        !     percent = percent + 1
-        ! endif
-        
-        if (iter .ge. maxIter .or. optCond .le. epsilon) exit        
-    enddo
-
+    print*, i4_choose(5,3)
     
-    call export(xk,n,y(m))
+    call export(xk,n,y(m),m,predictedDays)
 
     CONTAINS
+
+    !==============================================================================
+    ! EXPORT RESULT TO PLOT
+    !==============================================================================
+    subroutine export(x,n,x1,ntrain,nval)
+        implicit none
+
+        integer,        intent(in) :: n,ntrain,nval
+        real(kind=8),   intent(in) :: x(n),x1
+        real(kind=8) :: aux
+        integer :: i,j
+
+        Open(Unit = 100, File = "output/gnuplot/xstarlovo.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 110, File = "output/gnuplot/training.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 120, File = "output/gnuplot/validation.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 130, File = "output/data.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 140, File = "output/data2.txt", ACCESS = "SEQUENTIAL")
+
+        write(100,*) x1
+        write(100,*) x(1)
+        write(100,*) x(2)
+        write(100,*) x(3)
+
+        do i = 1, ntrain
+            read(130,*) aux
+            write(110,*) i, aux
+        enddo
+
+        j = i
+
+        do i = 1, nval
+            read(140,*) aux
+            write(120,*) j, aux
+            j = j + 1
+        enddo
+        
+        close(100)
+
+    end subroutine export
 
     !==============================================================================
     !
@@ -212,26 +216,6 @@ Program main
         res = res + y(m)
 
     end function model
-
-    !==============================================================================
-    ! EXPORT RESULT TO PLOT
-    !==============================================================================
-    subroutine export(x,n,x1)
-        implicit none
-
-        integer,        intent(in) :: n
-        real(kind=8),   intent(in) :: x(n),x1
-
-        Open(Unit = 30, File = "output/xstarlovo.txt", ACCESS = "SEQUENTIAL")
-
-        write(30,*) x1
-        write(30,*) x(1)
-        write(30,*) x(2)
-        write(30,*) x(3)
-        
-        close(30)
-
-    end subroutine export
 
     !==============================================================================
     ! READ THE DATA CORRESPONDING TO THE NUMBER OF days DESIRED
