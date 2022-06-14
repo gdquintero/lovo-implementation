@@ -37,7 +37,7 @@ Program main
     read(200,*) predictedDays
     close(200)
 
-    q = m - q
+    q = m - q 
     
     allocate(sk(n),xk(n),xtrial(n),dFmin(n),stat=allocerr)
     allocate(t(m),y(m),indices(m),stat=allocerr)
