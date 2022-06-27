@@ -7,9 +7,9 @@ program orderValueFunctions
     integer :: n,i,j,kflag
     real*8, allocatable :: grid(:),scenario(:,:),aux(:),indices(:),orderValue(:,:)
 
-    n = 1000
+    n = 10000
     a = 1.0d0
-    b = 5.0d0
+    b = 4.0d0
     h = (b - a) / (n + 1)
     kflag = 1
 
@@ -31,8 +31,20 @@ program orderValueFunctions
             aux(i) = scenario(i,j)
         end do
         call DSORT(aux,indices,5,kflag)
+        ! min (J = {1})
         orderValue(1,j) = aux(1)
+
+        ! max (J = {5})
         orderValue(2,j) = aux(5)
+
+        ! VaR (J = {3})
+        orderValue(3,j) = aux(3)
+
+        ! LOVO (J = {1,2,3})
+        orderValue(4,j) = (1.0d0 / 3.0d0) * sum(aux(1:3))
+
+        ! C-VaR (J = {4,5})
+        orderValue(5,j) = 0.5d0 * sum(aux(4:5))
     end do
 
     call export(grid,scenario,orderValue,n)
@@ -51,7 +63,7 @@ program orderValueFunctions
 
         do i = 1, n+2
             write(100,*) grid(i), scenario(1,i), scenario(2,i), scenario(3,i), scenario(4,i), scenario(5,i)
-            write(110,*) grid(i), orderValue(1,i), orderValue(2,i)
+            write(110,*) grid(i), orderValue(1,i), orderValue(2,i), orderValue(3,i), orderValue(4,i), orderValue(5,i)
         end do
 
     end subroutine
